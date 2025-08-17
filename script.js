@@ -2,7 +2,6 @@ const chatBox = document.getElementById("chat-box");
 const userInput = document.getElementById("user-input");
 const sendBtn = document.getElementById("send-btn");
 
-// Append message to chat
 function appendMessage(text, sender) {
   const msg = document.createElement("div");
   msg.classList.add("message", sender);
@@ -11,7 +10,6 @@ function appendMessage(text, sender) {
   chatBox.scrollTop = chatBox.scrollHeight;
 }
 
-// Handle send
 sendBtn.addEventListener("click", async () => {
   const text = userInput.value.trim();
   if (!text) return;
@@ -19,29 +17,24 @@ sendBtn.addEventListener("click", async () => {
   appendMessage(text, "user");
   userInput.value = "";
 
-  // Show temporary bot response
   const loadingMsg = document.createElement("div");
   loadingMsg.classList.add("message", "bot");
   loadingMsg.innerText = "Thinking...";
   chatBox.appendChild(loadingMsg);
-  chatBox.scrollTop = chatBox.scrollHeight;
 
   try {
     const response = await fetch("https://openrouter.ai/api/v1/chat/completions", {
       method: "POST",
       headers: {
-        "Authorization": "Bearer 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",
-        "HTTP-Referer": "http://localhost:3000", // Change this to your site URL later
-        "X-Title": "Chatbot Test",
+        "Authorization": "Bearer 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",  // 👈 put your key here
+        "HTTP-Referer": "",         // 👈 your site URL (for rankings)
+        "X-Title": "Chatbot Test",                       // 👈 app/site name
         "Content-Type": "application/json"
       },
       body: JSON.stringify({
-        "model": "deepseek/deepseek-r1-0528:free",
-        "messages": [
-          {
-            "role": "user",
-            "content": text
-          }
+        model: "deepseek/deepseek-r1-0528-qwen3-8b:free",
+        messages: [
+          { role: "user", content: text }
         ]
       })
     });
@@ -49,18 +42,19 @@ sendBtn.addEventListener("click", async () => {
     const data = await response.json();
     console.log("API response:", data);
 
-    if (data.choices && data.choices.length > 0) {
+    if (data?.choices?.length > 0 && data.choices[0].message?.content) {
       loadingMsg.innerText = data.choices[0].message.content;
+    } else if (data?.error) {
+      loadingMsg.innerText = "⚠️ API Error: " + data.error.message;
     } else {
-      loadingMsg.innerText = "No response from bot.";
+      loadingMsg.innerText = "⚠️ No response from bot.";
     }
-  } catch (error) {
-    console.error("Error:", error);
-    loadingMsg.innerText = "Error: Unable to connect.";
+  } catch (err) {
+    console.error("Fetch error:", err);
+    loadingMsg.innerText = "❌ Error connecting to API.";
   }
 });
 
-// Allow Enter key to send
 userInput.addEventListener("keypress", (e) => {
   if (e.key === "Enter") sendBtn.click();
 });
